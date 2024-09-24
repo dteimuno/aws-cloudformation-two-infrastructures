@@ -1,0 +1,52 @@
+Resources:
+  myLaunchTemplate:
+    Type: AWS::EC2::LaunchTemplate
+    Properties: 
+      LaunchTemplateName: !Sub ${AWS::StackName}-launch-template
+      LaunchTemplateData:
+        ImageId: ami-0ebfd941bbafe70c6
+        InstanceType: t2.micro
+        KeyName: keypairforluitccp3
+        SecurityGroupIds:
+          - Ref: ServerSecurityGroup
+        UserData: 
+          Fn::Base64: !Sub |
+            #!/bin/bash
+            yum update -y
+            yum install -y httpd
+            systemctl start httpd
+            systemctl enable httpd
+  myASG:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      LaunchTemplate:
+        LaunchTemplateId: !Ref myLaunchTemplate
+        Version: !GetAtt myLaunchTemplate.LatestVersionNumber
+      MaxSize: '5'
+      MinSize: '2'
+      VPCZoneIdentifier:
+        - subnet-036b945f62258a699
+        - subnet-0aae68b8219b4127d
+        - subnet-08b54624ac77ea0bf
+  ServerSecurityGroup:
+      Type: AWS::EC2::SecurityGroup
+      Properties:
+        GroupDescription: Allow HTTP and SSH from everywhere
+        VpcId: vpc-0db48b8b5c3211888
+        SecurityGroupIngress:
+          - IpProtocol: tcp
+            FromPort: 80
+            ToPort: 80
+            CidrIp: 0.0.0.0/0
+          - IpProtocol: tcp
+            FromPort: 22
+            ToPort: 22
+            CidrIp: 0.0.0.0/0
+        SecurityGroupEgress:
+            CidrIp: 0.0.0.0/0
+            Description: Allow all external traffic
+            IpProtocol: "-1"
+
+
+
+
